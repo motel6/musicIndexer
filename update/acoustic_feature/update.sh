@@ -24,6 +24,8 @@ function main(){
 
     [[ -f "$path_to_output_file" ]] && rm "$path_to_output_file"
 
+    log "info" "${label}" "Analyzing for: $file_path"
+
     "$path_to_extractor" "$file_path" "$path_to_output_file"
 
     # Read JSON content (escape single quotes for SQL)
