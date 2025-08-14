@@ -18,7 +18,7 @@ function main(){
 
     declare -r mime_type=$(file --mime-type -b "$file_path")
 
-    [[ "$mime_type" != audio/* ]] &&  log "warn" "${label}" "not an audio file, skip: $file_path" && exit 0
+    [[ "$mime_type" != audio/* ]] &&  log "warn" "${label}" "not an audio file, skip: $file_path" && exit 0
 
     set -e
 
@@ -28,15 +28,20 @@ function main(){
 
     "$path_to_extractor" "$file_path" "$path_to_output_file"
 
-    # Read JSON content (escape single quotes for SQL)
-    declare -r json_string=$(sed "s/'/''/g" "$path_to_output_file")
+    # Create a temporary SQL file
+    declare -r tmp_sql=$(mktemp)
+    
+    # Use jq to correctly escape the JSON, then sed to handle SQL-specific escaping.
+    {
+     printf "UPDATE carmen.music SET acoustic_feature = "
+     jq @json "$path_to_output_file"
+     printf " WHERE file_path = '%s' AND acoustic_feature IS NULL;\n" "${file_path//\'/\'\'}"
+    } > "$tmp_sql"
 
-    # Prepare SQL query: update if acoustic_feature is NULL and file_path matches
-    # Assuming the table 'music' has a column named 'file_path' to match the file, adjust if different
-    declare -r sql_query_update="UPDATE carmen.music SET acoustic_feature = '$json_string' WHERE file_path = '${file_path//\'/\'\'}' AND acoustic_feature IS NULL;"
+    # Run the SQL query from the temporary file.
+    MYSQL_PWD="$password" mysql -u root < "$tmp_sql"
 
-    # Run SQL query
-    MYSQL_PWD="$password" mysql -u root -e "$sql_query_update"
+    rm -f "$tmp_sql"
 
     log "info" "${label}" "Update complete for: $file_path"
 }
