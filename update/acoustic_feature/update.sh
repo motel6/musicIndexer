@@ -28,6 +28,8 @@ function main(){
 
     "$path_to_extractor" "$file_path" "$path_to_output_file"
 
+    perl -i -pe 's/[\x00-\x07\x0E-\x1F]/sprintf("\\u%04X", ord($&))/ge' "$path_to_output_file"
+
     # Create a temporary SQL file
     declare -r tmp_sql=$(mktemp)
     
