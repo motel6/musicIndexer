@@ -18,7 +18,7 @@ function main(){
 
     declare -r mime_type=$(file --mime-type -b "$file_path")
 
-    [[ "$mime_type" != audio/* ]] &&  log "warn" "${label}" "not an audio file, skip: $file_path" && exit 0
+    [[ "$mime_type" != audio/* ]] && log "warn" "${label}" "not an audio file, skip: $file_path" && exit 0
 
     set -e
 
